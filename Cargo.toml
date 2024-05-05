@@ -1,7 +1,14 @@
 [package]
 name = "rust-vector-logger"
 version = "0.1.0"
+authors = ["Cesar Augusto Sanchez <cesan3@gmail.com>"]
 edition = "2021"
+description = "A simple logger for Rust that logs to a vector"
+license = "Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/cesan3/rust-vector-logger"
+keywords = ["logging", "logger", "vector", "async", "tokio"]
+categories = ["logging", "async-std", "tokio"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
