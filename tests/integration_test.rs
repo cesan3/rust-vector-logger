@@ -24,7 +24,8 @@ async fn start_mock_server(port: u16) -> mpsc::Receiver<String> {
 #[tokio::test]
 async fn test_logger_sends_correct_message() {
     let mut receiver = start_mock_server(12345).await;
-    let mut logger = rust_vector_logger::Logger::init("TestApp", "127.0.0.1", 12345)
+    let level = "INFO";
+    let mut logger = rust_vector_logger::Logger::init("TestApp", &level, "127.0.0.1", 12345)
         .await
         .unwrap();
     logger.info("Test Message").await;
