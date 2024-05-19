@@ -1,3 +1,5 @@
+use env_logger;
+use log::{debug, error, info, trace, warn};
 use serde::{Deserialize, Serialize};
 use std::fmt::Arguments;
 use tokio::io::AsyncWriteExt;
@@ -33,8 +35,12 @@ pub struct Logger {
 }
 
 impl Logger {
+    pub fn init_logger() {
+        env_logger::init();
+    }
+
     // Initialize a new Logger
-    pub async fn init(
+    pub async fn new(
         application: &str,
         level: &str,
         host: &str,
@@ -48,6 +54,18 @@ impl Logger {
             stream,
         })
     }
+
+    // Initialize a new Logger (backwards compatibility)
+    pub async fn init(
+        application: &str,
+        level: &str,
+        host: &str,
+        port: u16,
+    ) -> tokio::io::Result<Logger> {
+        let logger = Logger::new(application, level, host, port).await?;
+        Ok(logger)
+    }
+
     // Establish a connection to the Vector server
     pub fn time_now() -> String {
         let now = time::Instant::now();
@@ -69,6 +87,7 @@ impl Logger {
         }
         let message = Message::new(Self::time_now(), &self.application, "INFO", message);
         self.send(&message).await.unwrap();
+        info!("{}", message.message);
     }
 
     pub async fn infof(&mut self, fmt_str: Arguments<'_>) {
@@ -78,15 +97,18 @@ impl Logger {
             return;
         }
         self.info(&fmt_str.to_string()).await;
+        info!("{}", fmt_str);
     }
 
     pub async fn error(&mut self, message: &str) {
         let message = Message::new(Self::time_now(), &self.application, "ERROR", message);
         self.send(&message).await.unwrap();
+        error!("{}", message.message);
     }
 
     pub async fn errorf(&mut self, fmt_str: Arguments<'_>) {
         self.error(&fmt_str.to_string()).await;
+        error!("{}", fmt_str);
     }
 
     pub async fn warn(&mut self, message: &str) {
@@ -95,6 +117,7 @@ impl Logger {
         }
         let message = Message::new(Self::time_now(), &self.application, "WARN", message);
         self.send(&message).await.unwrap();
+        warn!("{}", message.message);
     }
 
     pub async fn warnf(&mut self, fmt_str: Arguments<'_>) {
@@ -102,6 +125,7 @@ impl Logger {
             return;
         }
         self.warn(&fmt_str.to_string()).await;
+        warn!("{}", fmt_str);
     }
 
     pub async fn debug(&mut self, message: &str) {
@@ -110,6 +134,7 @@ impl Logger {
         }
         let message = Message::new(Self::time_now(), &self.application, "DEBUG", message);
         self.send(&message).await.unwrap();
+        debug!("{}", message.message);
     }
 
     pub async fn debugf(&mut self, fmt_str: Arguments<'_>) {
@@ -117,16 +142,19 @@ impl Logger {
             return;
         }
         self.debug(&fmt_str.to_string()).await;
+        debug!("{}", fmt_str);
     }
 
     pub async fn trace(&mut self, message: &str) {
         let message = Message::new(Self::time_now(), &self.application, "TRACE", message);
 
         self.send(&message).await.unwrap();
+        trace!("{}", message.message);
     }
 
     pub async fn tracef(&mut self, fmt_str: Arguments<'_>) {
         self.trace(&fmt_str.to_string()).await;
+        trace!("{}", fmt_str);
     }
 }
 
@@ -200,7 +228,7 @@ mod tests {
         let (local_addr, _, stop_server) = start_mock_server(12345).await;
         let level = "INFO";
 
-        let logger = Logger::init(
+        let logger = Logger::new(
             "TestApp",
             &level,
             &local_addr.ip().to_string(),
@@ -217,7 +245,7 @@ mod tests {
         let (local_addr, mut receiver, stop_server) = start_mock_server(12345).await;
         let level = "INFO";
 
-        let mut logger = Logger::init(
+        let mut logger = Logger::new(
             "TestApp",
             &level,
             &local_addr.ip().to_string(),
@@ -247,7 +275,7 @@ mod tests {
         let (local_addr, mut receiver, stop_server) = start_mock_server(12345).await;
         let level = "INFO";
 
-        let mut logger = Logger::init(
+        let mut logger = Logger::new(
             "TestApp",
             &level,
             &local_addr.ip().to_string(),
@@ -269,7 +297,7 @@ mod tests {
         let (local_addr, mut receiver, stop_server) = start_mock_server(12345).await;
         let level = "INFO";
 
-        let mut logger = Logger::init(
+        let mut logger = Logger::new(
             "TestApp",
             &level,
             &local_addr.ip().to_string(),
@@ -294,7 +322,7 @@ mod tests {
         let (local_addr, mut receiver, stop_server) = start_mock_server(12345).await;
         let level = "ERROR";
 
-        let mut logger = Logger::init(
+        let mut logger = Logger::new(
             "TestApp",
             &level,
             &local_addr.ip().to_string(),
@@ -316,7 +344,7 @@ mod tests {
         let (local_addr, mut receiver, stop_server) = start_mock_server(12345).await;
         let level = "ERROR";
 
-        let mut logger = Logger::init(
+        let mut logger = Logger::new(
             "TestApp",
             &level,
             &local_addr.ip().to_string(),
@@ -341,7 +369,7 @@ mod tests {
         let (local_addr, mut receiver, stop_server) = start_mock_server(12345).await;
         let level = "WARN";
 
-        let mut logger = Logger::init(
+        let mut logger = Logger::new(
             "TestApp",
             &level,
             &local_addr.ip().to_string(),
@@ -363,7 +391,7 @@ mod tests {
         let (local_addr, mut receiver, stop_server) = start_mock_server(12345).await;
         let level = "WARN";
 
-        let mut logger = Logger::init(
+        let mut logger = Logger::new(
             "TestApp",
             &level,
             &local_addr.ip().to_string(),
@@ -388,7 +416,7 @@ mod tests {
         let (local_addr, mut receiver, stop_server) = start_mock_server(12345).await;
         let level = "DEBUG";
 
-        let mut logger = Logger::init(
+        let mut logger = Logger::new(
             "TestApp",
             &level,
             &local_addr.ip().to_string(),
@@ -410,7 +438,7 @@ mod tests {
         let (local_addr, mut receiver, stop_server) = start_mock_server(12345).await;
         let level = "DEBUG";
 
-        let mut logger = Logger::init(
+        let mut logger = Logger::new(
             "TestApp",
             &level,
             &local_addr.ip().to_string(),
@@ -435,7 +463,7 @@ mod tests {
         let (local_addr, mut receiver, stop_server) = start_mock_server(12345).await;
         let level = "TRACE";
 
-        let mut logger = Logger::init(
+        let mut logger = Logger::new(
             "TestApp",
             &level,
             &local_addr.ip().to_string(),
@@ -457,7 +485,7 @@ mod tests {
         let (local_addr, mut receiver, stop_server) = start_mock_server(12345).await;
         let level = "TRACE";
 
-        let mut logger = Logger::init(
+        let mut logger = Logger::new(
             "TestApp",
             &level,
             &local_addr.ip().to_string(),
