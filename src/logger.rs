@@ -55,6 +55,16 @@ impl Logger {
         })
     }
 
+    pub async fn clone(&self) -> tokio::io::Result<Logger> {
+        let addr = self.stream.peer_addr().unwrap();
+        let stream = TcpStream::connect(addr).await?;
+        Ok(Logger {
+            application: self.application.clone(),
+            level: self.level.clone(),
+            stream,
+        })
+    }
+
     // Initialize a new Logger (backwards compatibility)
     pub async fn init(
         application: &str,
@@ -501,6 +511,26 @@ mod tests {
         let rx = receiver.recv().await.unwrap();
 
         assert_eq!(rx, "{\"timestamp\":\"0\",\"application\":\"TestApp\",\"level\":\"TRACE\",\"message\":\"This is a test message dear tester\"}");
+        stop_server.send(()).unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_logger_clone() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        let (local_addr, _, stop_server) = start_mock_server(12345).await;
+        let level = "INFO";
+
+        let logger = Logger::new(
+            "TestApp",
+            &level,
+            &local_addr.ip().to_string(),
+            local_addr.port(),
+        )
+        .await
+        .unwrap();
+        let mut cloned_logger = logger.clone().await.unwrap();
+        cloned_logger.info("This is a test message").await;
+
         stop_server.send(()).unwrap();
     }
 }
