@@ -1,10 +1,10 @@
+use chrono::Utc;
 use env_logger;
 use log::{debug, error, info, trace, warn};
 use serde::{Deserialize, Serialize};
 use std::fmt::Arguments;
 use tokio::io::AsyncWriteExt;
 use tokio::net::TcpStream;
-use tokio::time;
 
 // Message Structure for logging
 #[derive(Serialize, Deserialize, Debug)]
@@ -18,7 +18,7 @@ pub struct Message {
 impl Message {
     pub fn new(timestamp: String, application: &str, level: &str, message: &str) -> Self {
         Message {
-            timestamp: timestamp.to_string(),
+            timestamp,
             application: application.to_string(),
             level: level.to_string(),
             message: message.to_string(),
@@ -78,9 +78,8 @@ impl Logger {
 
     // Establish a connection to the Vector server
     pub fn time_now() -> String {
-        let now = time::Instant::now();
-        let now = now.elapsed().as_secs();
-        return now.to_string();
+        let now = Utc::now();
+        now.to_rfc3339()
     }
 
     async fn send(&mut self, message: &Message) -> tokio::io::Result<()> {
@@ -173,6 +172,7 @@ impl Logger {
 mod tests {
     use super::*;
     use once_cell::sync::Lazy;
+    use serde_json::Value;
     use std::net::SocketAddr;
     use std::sync::Mutex;
     use tokio::io::AsyncReadExt;
@@ -263,9 +263,10 @@ mod tests {
         )
         .await
         .unwrap();
+        let now = Logger::time_now();
         logger
             .send(&Message::new(
-                "12345".to_string(),
+                now.clone(),
                 "TestApp",
                 "INFO",
                 "This is a test message",
@@ -274,8 +275,13 @@ mod tests {
             .unwrap();
 
         let rx = receiver.recv().await.unwrap();
+        let received_message: Value = serde_json::from_str(&rx).unwrap();
+        let received_timestamp = received_message["timestamp"].as_str().unwrap();
+        assert_eq!(received_timestamp, now);
+        assert_eq!(received_message["application"], "TestApp");
+        assert_eq!(received_message["level"], "INFO");
+        assert_eq!(received_message["message"], "This is a test message");
 
-        assert_eq!(rx, "{\"timestamp\":\"12345\",\"application\":\"TestApp\",\"level\":\"INFO\",\"message\":\"This is a test message\"}");
         stop_server.send(()).unwrap();
     }
 
@@ -297,7 +303,10 @@ mod tests {
 
         let rx = receiver.recv().await.unwrap();
 
-        assert_eq!(rx, "{\"timestamp\":\"0\",\"application\":\"TestApp\",\"level\":\"INFO\",\"message\":\"This is a test message\"}");
+        let received_message: Value = serde_json::from_str(&rx).unwrap();
+        assert_eq!(received_message["application"], "TestApp");
+        assert_eq!(received_message["level"], "INFO");
+        assert_eq!(received_message["message"], "This is a test message");
         stop_server.send(()).unwrap();
     }
 
@@ -321,8 +330,13 @@ mod tests {
             .await;
 
         let rx = receiver.recv().await.unwrap();
-
-        assert_eq!(rx, "{\"timestamp\":\"0\",\"application\":\"TestApp\",\"level\":\"INFO\",\"message\":\"This is a test message dear tester\"}");
+        let received_message: Value = serde_json::from_str(&rx).unwrap();
+        assert_eq!(received_message["application"], "TestApp");
+        assert_eq!(received_message["level"], "INFO");
+        assert_eq!(
+            received_message["message"],
+            "This is a test message dear tester"
+        );
         stop_server.send(()).unwrap();
     }
 
@@ -343,8 +357,10 @@ mod tests {
         logger.error("This is a test message").await;
 
         let rx = receiver.recv().await.unwrap();
-
-        assert_eq!(rx, "{\"timestamp\":\"0\",\"application\":\"TestApp\",\"level\":\"ERROR\",\"message\":\"This is a test message\"}");
+        let received_message: Value = serde_json::from_str(&rx).unwrap();
+        assert_eq!(received_message["application"], "TestApp");
+        assert_eq!(received_message["level"], "ERROR");
+        assert_eq!(received_message["message"], "This is a test message");
         stop_server.send(()).unwrap();
     }
 
@@ -368,8 +384,13 @@ mod tests {
             .await;
 
         let rx = receiver.recv().await.unwrap();
-
-        assert_eq!(rx, "{\"timestamp\":\"0\",\"application\":\"TestApp\",\"level\":\"ERROR\",\"message\":\"This is a test message dear tester\"}");
+        let received_message: Value = serde_json::from_str(&rx).unwrap();
+        assert_eq!(received_message["application"], "TestApp");
+        assert_eq!(received_message["level"], "ERROR");
+        assert_eq!(
+            received_message["message"],
+            "This is a test message dear tester"
+        );
         stop_server.send(()).unwrap();
     }
 
@@ -390,8 +411,10 @@ mod tests {
         logger.warn("This is a test message").await;
 
         let rx = receiver.recv().await.unwrap();
-
-        assert_eq!(rx, "{\"timestamp\":\"0\",\"application\":\"TestApp\",\"level\":\"WARN\",\"message\":\"This is a test message\"}");
+        let received_message: Value = serde_json::from_str(&rx).unwrap();
+        assert_eq!(received_message["application"], "TestApp");
+        assert_eq!(received_message["level"], "WARN");
+        assert_eq!(received_message["message"], "This is a test message");
         stop_server.send(()).unwrap();
     }
 
@@ -415,8 +438,13 @@ mod tests {
             .await;
 
         let rx = receiver.recv().await.unwrap();
-
-        assert_eq!(rx, "{\"timestamp\":\"0\",\"application\":\"TestApp\",\"level\":\"WARN\",\"message\":\"This is a test message dear tester\"}");
+        let received_message: Value = serde_json::from_str(&rx).unwrap();
+        assert_eq!(received_message["application"], "TestApp");
+        assert_eq!(received_message["level"], "WARN");
+        assert_eq!(
+            received_message["message"],
+            "This is a test message dear tester"
+        );
         stop_server.send(()).unwrap();
     }
 
@@ -437,8 +465,10 @@ mod tests {
         logger.debug("This is a test message").await;
 
         let rx = receiver.recv().await.unwrap();
-
-        assert_eq!(rx, "{\"timestamp\":\"0\",\"application\":\"TestApp\",\"level\":\"DEBUG\",\"message\":\"This is a test message\"}");
+        let received_message: Value = serde_json::from_str(&rx).unwrap();
+        assert_eq!(received_message["application"], "TestApp");
+        assert_eq!(received_message["level"], "DEBUG");
+        assert_eq!(received_message["message"], "This is a test message");
         stop_server.send(()).unwrap();
     }
 
@@ -462,8 +492,13 @@ mod tests {
             .await;
 
         let rx = receiver.recv().await.unwrap();
-
-        assert_eq!(rx, "{\"timestamp\":\"0\",\"application\":\"TestApp\",\"level\":\"DEBUG\",\"message\":\"This is a test message dear tester\"}");
+        let received_message: Value = serde_json::from_str(&rx).unwrap();
+        assert_eq!(received_message["application"], "TestApp");
+        assert_eq!(received_message["level"], "DEBUG");
+        assert_eq!(
+            received_message["message"],
+            "This is a test message dear tester"
+        );
         stop_server.send(()).unwrap();
     }
 
@@ -484,8 +519,10 @@ mod tests {
         logger.trace("This is a test message").await;
 
         let rx = receiver.recv().await.unwrap();
-
-        assert_eq!(rx, "{\"timestamp\":\"0\",\"application\":\"TestApp\",\"level\":\"TRACE\",\"message\":\"This is a test message\"}");
+        let received_message: Value = serde_json::from_str(&rx).unwrap();
+        assert_eq!(received_message["application"], "TestApp");
+        assert_eq!(received_message["level"], "TRACE");
+        assert_eq!(received_message["message"], "This is a test message");
         stop_server.send(()).unwrap();
     }
 
@@ -509,8 +546,13 @@ mod tests {
             .await;
 
         let rx = receiver.recv().await.unwrap();
-
-        assert_eq!(rx, "{\"timestamp\":\"0\",\"application\":\"TestApp\",\"level\":\"TRACE\",\"message\":\"This is a test message dear tester\"}");
+        let received_message: Value = serde_json::from_str(&rx).unwrap();
+        assert_eq!(received_message["application"], "TestApp");
+        assert_eq!(received_message["level"], "TRACE");
+        assert_eq!(
+            received_message["message"],
+            "This is a test message dear tester"
+        );
         stop_server.send(()).unwrap();
     }
 
@@ -530,7 +572,6 @@ mod tests {
         .unwrap();
         let mut logger_reconnected = logger.reconnect().await.unwrap();
         logger_reconnected.info("This is a test message").await;
-
         stop_server.send(()).unwrap();
     }
 }
