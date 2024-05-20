@@ -55,13 +55,13 @@ impl Logger {
         })
     }
 
-    pub async fn clone(&self) -> tokio::io::Result<Logger> {
-        let addr = self.stream.peer_addr().unwrap();
-        let stream = TcpStream::connect(addr).await?;
+    pub async fn reconnect(&self) -> tokio::io::Result<Logger> {
+        let addr = self.stream.peer_addr()?;
+        let new_stream = TcpStream::connect(addr).await?;
         Ok(Logger {
             application: self.application.clone(),
             level: self.level.clone(),
-            stream,
+            stream: new_stream,
         })
     }
 
@@ -515,7 +515,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_logger_clone() {
+    async fn test_logger_reconnect() {
         let _guard = TEST_MUTEX.lock().unwrap();
         let (local_addr, _, stop_server) = start_mock_server(12345).await;
         let level = "INFO";
@@ -528,8 +528,8 @@ mod tests {
         )
         .await
         .unwrap();
-        let mut cloned_logger = logger.clone().await.unwrap();
-        cloned_logger.info("This is a test message").await;
+        let mut logger_reconnected = logger.reconnect().await.unwrap();
+        logger_reconnected.info("This is a test message").await;
 
         stop_server.send(()).unwrap();
     }
