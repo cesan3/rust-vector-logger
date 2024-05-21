@@ -79,7 +79,7 @@ impl Logger {
     // Establish a connection to the Vector server
     pub fn time_now() -> String {
         let now = Utc::now();
-        now.to_rfc3339()
+        now.format("%Y-%m-%dT%H:%M:%S.%fZ").to_string()
     }
 
     async fn send(&mut self, message: &Message) -> tokio::io::Result<()> {
