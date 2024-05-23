@@ -84,7 +84,18 @@ impl Logger {
 
     async fn send(&mut self, message: &Message) -> tokio::io::Result<()> {
         let json = serde_json::to_string(&message).unwrap();
-        self.stream.write_all(json.as_bytes()).await?;
+        loop {
+            match self.stream.write_all(json.as_bytes()).await {
+                Ok(_) => {
+                    break;
+                }
+                Err(e) => {
+                    error!("Error sending message: {}", e);
+                    self.stream = self.reconnect().await?.stream;
+                }
+            }
+        }
+
         Ok(())
     }
 
