@@ -95,8 +95,15 @@ impl Logger {
             return;
         }
         let message = Message::new(Self::time_now(), &self.application, "INFO", message);
-        self.send(&message).await.unwrap();
-        info!("{}", message.message);
+        let result = self.send(&message).await;
+        match result {
+            Ok(_) => {
+                info!("{}", message.message);
+            }
+            Err(e) => {
+                error!("Error sending message: {}", e);
+            }
+        }
     }
 
     pub async fn infof(&mut self, fmt_str: Arguments<'_>) {
@@ -106,18 +113,23 @@ impl Logger {
             return;
         }
         self.info(&fmt_str.to_string()).await;
-        info!("{}", fmt_str);
     }
 
     pub async fn error(&mut self, message: &str) {
         let message = Message::new(Self::time_now(), &self.application, "ERROR", message);
-        self.send(&message).await.unwrap();
-        error!("{}", message.message);
+        let result = self.send(&message).await;
+        match result {
+            Ok(_) => {
+                error!("{}", message.message);
+            }
+            Err(e) => {
+                error!("Error sending message: {}", e);
+            }
+        }
     }
 
     pub async fn errorf(&mut self, fmt_str: Arguments<'_>) {
         self.error(&fmt_str.to_string()).await;
-        error!("{}", fmt_str);
     }
 
     pub async fn warn(&mut self, message: &str) {
@@ -125,8 +137,15 @@ impl Logger {
             return;
         }
         let message = Message::new(Self::time_now(), &self.application, "WARN", message);
-        self.send(&message).await.unwrap();
-        warn!("{}", message.message);
+        let result = self.send(&message).await;
+        match result {
+            Ok(_) => {
+                warn!("{}", message.message);
+            }
+            Err(e) => {
+                error!("Error sending message: {}", e);
+            }
+        }
     }
 
     pub async fn warnf(&mut self, fmt_str: Arguments<'_>) {
@@ -134,7 +153,6 @@ impl Logger {
             return;
         }
         self.warn(&fmt_str.to_string()).await;
-        warn!("{}", fmt_str);
     }
 
     pub async fn debug(&mut self, message: &str) {
@@ -142,8 +160,15 @@ impl Logger {
             return;
         }
         let message = Message::new(Self::time_now(), &self.application, "DEBUG", message);
-        self.send(&message).await.unwrap();
-        debug!("{}", message.message);
+        let result = self.send(&message).await;
+        match result {
+            Ok(_) => {
+                debug!("{}", message.message);
+            }
+            Err(e) => {
+                error!("Error sending message: {}", e);
+            }
+        }
     }
 
     pub async fn debugf(&mut self, fmt_str: Arguments<'_>) {
@@ -151,19 +176,23 @@ impl Logger {
             return;
         }
         self.debug(&fmt_str.to_string()).await;
-        debug!("{}", fmt_str);
     }
 
     pub async fn trace(&mut self, message: &str) {
         let message = Message::new(Self::time_now(), &self.application, "TRACE", message);
-
-        self.send(&message).await.unwrap();
-        trace!("{}", message.message);
+        let result = self.send(&message).await;
+        match result {
+            Ok(_) => {
+                trace!("{}", message.message);
+            }
+            Err(e) => {
+                error!("Error sending message: {}", e);
+            }
+        }
     }
 
     pub async fn tracef(&mut self, fmt_str: Arguments<'_>) {
         self.trace(&fmt_str.to_string()).await;
-        trace!("{}", fmt_str);
     }
 }
 
