@@ -29,9 +29,11 @@ impl Message {
 // Logger struct to handle connections
 //
 pub struct Logger {
-    stream: TcpStream,
+    stream: Option<TcpStream>,
     application: String,
     level: String,
+    host: String,
+    port: u16,
 }
 
 impl Logger {
@@ -47,21 +49,25 @@ impl Logger {
         port: u16,
     ) -> tokio::io::Result<Logger> {
         let addr = format!("{}:{}", host, port);
-        let stream = TcpStream::connect(addr).await?;
+        let stream = TcpStream::connect(addr).await.ok();
         Ok(Logger {
             application: application.to_string(),
             level: level.to_string(),
             stream,
+            host: host.to_string(),
+            port,
         })
     }
 
     pub async fn reconnect(&self) -> tokio::io::Result<Logger> {
-        let addr = self.stream.peer_addr()?;
-        let new_stream = TcpStream::connect(addr).await?;
+        let addr = format!("{}:{}", self.host, self.port);
+        let new_stream = TcpStream::connect(addr).await.ok();
         Ok(Logger {
             application: self.application.clone(),
             level: self.level.clone(),
             stream: new_stream,
+            host: self.host.clone(),
+            port: self.port,
         })
     }
 
@@ -76,22 +82,29 @@ impl Logger {
         Ok(logger)
     }
 
-    // Establish a connection to the Vector server
     pub fn time_now() -> String {
         let now = Utc::now();
         now.format("%Y-%m-%dT%H:%M:%S.%fZ").to_string()
     }
 
-    async fn send(&mut self, message: &Message) -> tokio::io::Result<()> {
+    async fn send(&mut self, message: &Message) -> Result<(), Box<dyn std::error::Error>> {
         let json = serde_json::to_string(&message).unwrap();
         loop {
-            match self.stream.write_all(json.as_bytes()).await {
-                Ok(_) => {
-                    break;
-                }
-                Err(e) => {
-                    error!("Error sending message: {}", e);
-                    self.stream = self.reconnect().await?.stream;
+            if self.stream.is_none() {
+                let addr = format!("{}:{}", self.host, self.port);
+                self.stream = Some(TcpStream::connect(addr).await?);
+            }
+
+            if let Some(stream) = &mut self.stream {
+                match stream.write_all(json.as_bytes()).await {
+                    Ok(_) => {
+                        break;
+                    }
+                    Err(e) if e.kind() == std::io::ErrorKind::BrokenPipe => {
+                        error!("Error sending message: {}", e);
+                        self.stream = None;
+                    }
+                    Err(e) => return Err(Box::new(e)),
                 }
             }
         }
