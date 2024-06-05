@@ -1,6 +1,6 @@
 [package]
 name = "rust-vector-logger"
-version = "0.1.12"
+version = "0.1.13"
 authors = ["Cesar Augusto Sanchez <cesan3@gmail.com>"]
 edition = "2021"
 description = "A simple logger for Rust that logs to a vector"
