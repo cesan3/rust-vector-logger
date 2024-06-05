@@ -63,6 +63,8 @@ jobs:
           fetch-depth: 0
           show-progress: true
 
+      - name: Fetch all tags
+        run: git fetch --tags
 
       - name: Set up Rust
         uses: actions-rs/toolchain@v1
@@ -77,6 +79,9 @@ jobs:
           VERSION=$(git describe --tags --abbrev=0)
           echo "VERSION=$VERSION"
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Checkout the latest tag
+        run: git checkout ${{ steps.get_version.outputs.VERSION }}
 
       - name: Publish to crates.io
         run: |
