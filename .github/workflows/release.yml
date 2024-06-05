@@ -44,6 +44,7 @@ jobs:
           git config --global user.email "cesan3@gmail.com"
           git config --global user.name "Cesar Sanchez"
           cargo bump patch
+          cargo build
           git add Cargo.toml Cargo.lock
           git commit -m "ci: bump version"
           version=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
