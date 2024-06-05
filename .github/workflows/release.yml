@@ -58,6 +58,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
 
       - name: Set up Rust
         uses: actions-rs/toolchain@v1
@@ -66,8 +68,12 @@ jobs:
           profile: minimal
           override: true
 
-      - name: Cargo Package
-        run: cargo package
+      - name: Get the latest tag
+        id: get_version
+        run: echo ::set-output name=VERSION::$(git describe --tags --abbrev=0)
 
       - name: Publish to crates.io
         run: cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          GIT_TAG: ${{ steps.get_version.outputs.VERSION }}
