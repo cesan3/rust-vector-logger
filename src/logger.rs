@@ -225,6 +225,7 @@ impl Logger {
 mod tests {
     use super::*;
     use once_cell::sync::Lazy;
+    use rand::Rng;
     use serde_json::Value;
     use std::net::SocketAddr;
     use std::sync::Mutex;
@@ -285,10 +286,15 @@ mod tests {
         assert_eq!(msg.message, "This is a test message");
     }
 
+    fn _get_random_port() -> u16 {
+        let mut rng = rand::thread_rng();
+        rng.gen_range(12300..12400)
+    }
+
     #[tokio::test]
     async fn test_logger_initialization() {
         let _guard = TEST_MUTEX.lock().unwrap();
-        let (local_addr, _, stop_server) = start_mock_server(12346).await;
+        let (local_addr, _, stop_server) = start_mock_server(_get_random_port()).await;
         let level = "INFO";
 
         let logger = Logger::new(
@@ -305,7 +311,7 @@ mod tests {
     #[tokio::test]
     async fn test_logger_send() {
         let _guard = TEST_MUTEX.lock().unwrap();
-        let (local_addr, mut receiver, stop_server) = start_mock_server(12347).await;
+        let (local_addr, mut receiver, stop_server) = start_mock_server(_get_random_port()).await;
         let level = "INFO";
 
         let mut logger = Logger::new(
@@ -341,7 +347,7 @@ mod tests {
     #[tokio::test]
     async fn test_logger_info() {
         let _guard = TEST_MUTEX.lock().unwrap();
-        let (local_addr, mut receiver, stop_server) = start_mock_server(12348).await;
+        let (local_addr, mut receiver, stop_server) = start_mock_server(_get_random_port()).await;
         let level = "INFO";
 
         let mut logger = Logger::new(
@@ -366,7 +372,7 @@ mod tests {
     #[tokio::test]
     async fn test_logger_infof() {
         let _guard = TEST_MUTEX.lock().unwrap();
-        let (local_addr, mut receiver, stop_server) = start_mock_server(12349).await;
+        let (local_addr, mut receiver, stop_server) = start_mock_server(_get_random_port()).await;
         let level = "INFO";
 
         let mut logger = Logger::new(
@@ -396,7 +402,7 @@ mod tests {
     #[tokio::test]
     async fn test_logger_error() {
         let _guard = TEST_MUTEX.lock().unwrap();
-        let (local_addr, mut receiver, stop_server) = start_mock_server(12350).await;
+        let (local_addr, mut receiver, stop_server) = start_mock_server(_get_random_port()).await;
         let level = "ERROR";
 
         let mut logger = Logger::new(
@@ -420,7 +426,7 @@ mod tests {
     #[tokio::test]
     async fn test_logger_errorf() {
         let _guard = TEST_MUTEX.lock().unwrap();
-        let (local_addr, mut receiver, stop_server) = start_mock_server(12351).await;
+        let (local_addr, mut receiver, stop_server) = start_mock_server(_get_random_port()).await;
         let level = "ERROR";
 
         let mut logger = Logger::new(
@@ -450,7 +456,7 @@ mod tests {
     #[tokio::test]
     async fn test_logger_warn() {
         let _guard = TEST_MUTEX.lock().unwrap();
-        let (local_addr, mut receiver, stop_server) = start_mock_server(12352).await;
+        let (local_addr, mut receiver, stop_server) = start_mock_server(_get_random_port()).await;
         let level = "WARN";
 
         let mut logger = Logger::new(
@@ -474,7 +480,7 @@ mod tests {
     #[tokio::test]
     async fn test_logger_warnf() {
         let _guard = TEST_MUTEX.lock().unwrap();
-        let (local_addr, mut receiver, stop_server) = start_mock_server(12353).await;
+        let (local_addr, mut receiver, stop_server) = start_mock_server(_get_random_port()).await;
         let level = "WARN";
 
         let mut logger = Logger::new(
@@ -504,7 +510,7 @@ mod tests {
     #[tokio::test]
     async fn test_logger_debug() {
         let _guard = TEST_MUTEX.lock().unwrap();
-        let (local_addr, mut receiver, stop_server) = start_mock_server(12354).await;
+        let (local_addr, mut receiver, stop_server) = start_mock_server(_get_random_port()).await;
         let level = "DEBUG";
 
         let mut logger = Logger::new(
@@ -528,7 +534,7 @@ mod tests {
     #[tokio::test]
     async fn test_logger_debugf() {
         let _guard = TEST_MUTEX.lock().unwrap();
-        let (local_addr, mut receiver, stop_server) = start_mock_server(12355).await;
+        let (local_addr, mut receiver, stop_server) = start_mock_server(_get_random_port()).await;
         let level = "DEBUG";
 
         let mut logger = Logger::new(
@@ -558,7 +564,7 @@ mod tests {
     #[tokio::test]
     async fn test_logger_trace() {
         let _guard = TEST_MUTEX.lock().unwrap();
-        let (local_addr, mut receiver, stop_server) = start_mock_server(12356).await;
+        let (local_addr, mut receiver, stop_server) = start_mock_server(_get_random_port()).await;
         let level = "TRACE";
 
         let mut logger = Logger::new(
@@ -582,7 +588,7 @@ mod tests {
     #[tokio::test]
     async fn test_logger_tracef() {
         let _guard = TEST_MUTEX.lock().unwrap();
-        let (local_addr, mut receiver, stop_server) = start_mock_server(12357).await;
+        let (local_addr, mut receiver, stop_server) = start_mock_server(_get_random_port()).await;
         let level = "TRACE";
 
         let mut logger = Logger::new(
@@ -612,7 +618,7 @@ mod tests {
     #[tokio::test]
     async fn test_logger_reconnect() {
         let _guard = TEST_MUTEX.lock().unwrap();
-        let (local_addr, _, stop_server) = start_mock_server(12358).await;
+        let (local_addr, _, stop_server) = start_mock_server(_get_random_port()).await;
         let level = "INFO";
 
         let logger = Logger::new(
